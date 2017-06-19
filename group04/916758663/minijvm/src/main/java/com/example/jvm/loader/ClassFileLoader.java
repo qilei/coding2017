@@ -1,5 +1,6 @@
 package com.example.jvm.loader;
 
+import com.example.jvm.clz.ClassFile;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -63,8 +64,10 @@ public class ClassFileLoader {
 		return result;
 	}
 
-	
 
-	
-
+	public ClassFile loadClass(String className) {
+		byte[] codes = this.readBinaryCode(className);
+		ClassFileParser parser = new ClassFileParser();
+		return parser.parse(codes);
+	}
 }

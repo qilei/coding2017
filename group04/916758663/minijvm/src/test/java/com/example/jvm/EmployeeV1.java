@@ -1,4 +1,4 @@
-package com.example.jvm.loader;
+package com.example.jvm;
 
 public class EmployeeV1 {
 	

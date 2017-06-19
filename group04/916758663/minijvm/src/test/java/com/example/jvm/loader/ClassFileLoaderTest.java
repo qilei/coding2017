@@ -1,6 +1,13 @@
 package com.example.jvm.loader;
 
 
+import com.example.jvm.clz.ClassFile;
+import com.example.jvm.clz.ClassIndex;
+import com.example.jvm.constant.ClassInfo;
+import com.example.jvm.constant.ConstantPool;
+import com.example.jvm.constant.MethodRefInfo;
+import com.example.jvm.constant.NameAndTypeInfo;
+import com.example.jvm.constant.UTF8Info;
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -10,9 +17,20 @@ import org.junit.Test;
  * Created by qilei on 17/4/3.
  */
 public class ClassFileLoaderTest {
+  private static final String FULL_QUALIFIED_CLASS_NAME = "com/example/jvm/EmployeeV1";
 
   static String path1 = "/Users/qilei/idea/coding2017/coding2017/group04/916758663/minijvm/target/test-classes";
   static String path2 = "/Users/qilei/idea/coding2017/coding2017/group04/916758663/minijvm/target/classes";
+
+  static ClassFile clzFile = null;
+  static {
+    ClassFileLoader loader = new ClassFileLoader();
+    loader.addClassPath(path1);
+    String className = "com.example.jvm.EmployeeV1";
+
+    clzFile = loader.loadClass(className);
+    clzFile.print();
+  }
 
   @Before
   public void setUp() throws Exception {
@@ -38,7 +56,7 @@ public class ClassFileLoaderTest {
 
     ClassFileLoader loader = new ClassFileLoader();
     loader.addClassPath(path1);
-    String className = "com.example.jvm.loader.EmployeeV1";
+    String className = "com.example.jvm.EmployeeV1";
 
     byte[] byteCodes = loader.readBinaryCode(className);
 
@@ -51,7 +69,7 @@ public class ClassFileLoaderTest {
   public void testMagicNumber(){
     ClassFileLoader loader = new ClassFileLoader();
     loader.addClassPath(path1);
-    String className = "com.example.jvm.loader.EmployeeV1";
+    String className = "com.example.jvm.EmployeeV1";
     byte[] byteCodes = loader.readBinaryCode(className);
     byte[] codes = new byte[]{byteCodes[0],byteCodes[1],byteCodes[2],byteCodes[3]};
 
@@ -73,6 +91,95 @@ public class ClassFileLoaderTest {
       buffer.append(strHex);
     }
     return buffer.toString();
+  }
+
+
+  @Test
+  public void testVersion(){
+
+    Assert.assertEquals(0, clzFile.getMinorVersion());
+    Assert.assertEquals(52, clzFile.getMajorVersion());
+
+  }
+
+  @Test
+  public void testConstantPool(){
+
+
+    ConstantPool pool = clzFile.getConstantPool();
+
+    Assert.assertEquals(53, pool.getSize());
+
+    {
+      ClassInfo clzInfo = (ClassInfo) pool.getConstantInfo(1);
+      Assert.assertEquals(2, clzInfo.getUtf8Index());
+
+      UTF8Info utf8Info = (UTF8Info) pool.getConstantInfo(2);
+      Assert.assertEquals(FULL_QUALIFIED_CLASS_NAME, utf8Info.getValue());
+    }
+    {
+      ClassInfo clzInfo = (ClassInfo) pool.getConstantInfo(3);
+      Assert.assertEquals(4, clzInfo.getUtf8Index());
+
+      UTF8Info utf8Info = (UTF8Info) pool.getConstantInfo(4);
+      Assert.assertEquals("java/lang/Object", utf8Info.getValue());
+    }
+    {
+      UTF8Info utf8Info = (UTF8Info) pool.getConstantInfo(5);
+      Assert.assertEquals("name", utf8Info.getValue());
+
+      utf8Info = (UTF8Info) pool.getConstantInfo(6);
+      Assert.assertEquals("Ljava/lang/String;", utf8Info.getValue());
+
+      utf8Info = (UTF8Info) pool.getConstantInfo(7);
+      Assert.assertEquals("age", utf8Info.getValue());
+
+      utf8Info = (UTF8Info) pool.getConstantInfo(8);
+      Assert.assertEquals("I", utf8Info.getValue());
+
+      utf8Info = (UTF8Info) pool.getConstantInfo(9);
+      Assert.assertEquals("<init>", utf8Info.getValue());
+
+      utf8Info = (UTF8Info) pool.getConstantInfo(10);
+      Assert.assertEquals("(Ljava/lang/String;I)V", utf8Info.getValue());
+
+      utf8Info = (UTF8Info) pool.getConstantInfo(11);
+      Assert.assertEquals("Code", utf8Info.getValue());
+    }
+
+    {
+      MethodRefInfo methodRef = (MethodRefInfo)pool.getConstantInfo(12);
+      Assert.assertEquals(3, methodRef.getClassInfoIndex());
+      Assert.assertEquals(13, methodRef.getNameAndTypeIndex());
+    }
+
+    {
+      NameAndTypeInfo nameAndType = (NameAndTypeInfo) pool.getConstantInfo(13);
+      Assert.assertEquals(9, nameAndType.getIndex1());
+      Assert.assertEquals(14, nameAndType.getIndex2());
+    }
+    //抽查几个吧
+    {
+      MethodRefInfo methodRef = (MethodRefInfo)pool.getConstantInfo(45);
+      Assert.assertEquals(1, methodRef.getClassInfoIndex());
+      Assert.assertEquals(46, methodRef.getNameAndTypeIndex());
+    }
+
+    {
+      UTF8Info utf8Info = (UTF8Info) pool.getConstantInfo(53);
+      Assert.assertEquals("EmployeeV1.java", utf8Info.getValue());
+    }
+  }
+  @Test
+  public void testClassIndex(){
+
+    ClassIndex clzIndex = clzFile.getClzIndex();
+    ClassInfo thisClassInfo = (ClassInfo)clzFile.getConstantPool().getConstantInfo(clzIndex.getThisClassIndex());
+    ClassInfo superClassInfo = (ClassInfo)clzFile.getConstantPool().getConstantInfo(clzIndex.getSuperClassIndex());
+
+
+    Assert.assertEquals(FULL_QUALIFIED_CLASS_NAME, thisClassInfo.getClassName());
+    Assert.assertEquals("java/lang/Object", superClassInfo.getClassName());
   }
 
 }
