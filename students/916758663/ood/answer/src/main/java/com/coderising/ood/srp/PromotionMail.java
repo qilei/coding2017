@@ -23,37 +23,24 @@ public class PromotionMail {
     } catch (IOException e) {
       e.printStackTrace();
     }
-    Product product = products.get(0);
-    String subject = "您关注的产品降价了";
-    String smtpHost = Configuration.getProperty(Configuration.SMTP_SERVER);
-    String altSmtpHost = Configuration.getProperty(Configuration.ALT_SMTP_SERVER);
-    String fromAddress = Configuration.getProperty(Configuration.EMAIL_ADMIN);
     boolean debug = false;
     for (User user : users) {
-      String email = user.getEmail();
-      String msg = buildMsg(user,product);
-      try
-      {
-        if (email.length() > 0)
-          MailUtil.sendEmail(email, fromAddress, subject, msg, smtpHost, debug);
-      }
-      catch (Exception e)
-      {
-
-        try {
-          MailUtil.sendEmail(email, fromAddress, subject, msg, altSmtpHost, debug);
-
-        } catch (Exception e2)
-        {
-          System.out.println("通过备用 SMTP服务器发送邮件失败: " + e2.getMessage());
-        }
-      }
+      Mail mail = buildMail(user);
+      MailUtil.sendEmail(mail, debug);
     }
 
   }
 
-  private String buildMsg(User user, Product product) {
-    String message = "尊敬的 "+ user.getName()+", 您关注的产品 " + product.getDesc() + " 降价了，欢迎购买!" ;
+  private Mail buildMail(User user) {
+	  Mail mail = new Mail();
+	  mail.setToAddr(user.getEmail());
+	  mail.setSubject("您关注的产品降价了");
+	  mail.setContent(buildMsg(user.getName(), user.getProductList().get(0)));
+    return mail;
+  }
+
+  private String buildMsg(String userName, Product product) {
+    String message = "尊敬的 "+ userName+", 您关注的产品 " + product.getDesc() + " 降价了，欢迎购买!" ;
     return message;
   }
 }
